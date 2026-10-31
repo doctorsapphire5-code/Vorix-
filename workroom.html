@@ -1,0 +1,17 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Workroom | Vorix Work</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Instrument+Sans:wght@400;600&display=swap"><link rel="stylesheet" href="assets/style.css">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="assets/app.js"></script></head><body><header id="h"></header>
+<main class="wrap sec"><div class="two"><div><h1 id="t" style="font-size:34px"></h1><p class="mu" id="m"></p><div class="card" id="ms" style="height:380px;overflow:auto;margin:16px 0"></div><div style="display:flex;gap:10px"><input id="tx" placeholder="Write a message" aria-label="Message" style="margin:0"><button class="btn" id="sd">Send</button></div></div>
+<aside class="card b"><h3 id="st"></h3><p class="mu" id="pc" style="margin:6px 0 14px"></p><button class="btn" id="dn" hidden>Mark project as completed</button><div id="rv"></div></aside></div></main><footer id="f"></footer>
+<script>const id=new URLSearchParams(location.search).get('id');
+V.init({auth:true},async(u,me)=>{const ref=col('projects').doc(id),d=await ref.get(),p=d.data();
+if(!d.exists||(p.owner!=u.uid&&p.hired!=u.uid)){alert('Only the client and the hired freelancer can open this workroom.');return location.href='index.html'}
+const cl=p.owner==u.uid;$('#t').textContent=p.title;$('#m').textContent=p.businessName;$('#st').textContent='Status: '+p.status;$('#pc').textContent='Agreed price: $'+(p.price||p.budget);
+ref.collection('messages').orderBy('created').onSnapshot(s=>{const b=$('#ms');b.innerHTML=s.docs.map(x=>x.data()).map(x=>`<div class="row" style="display:block;${x.from==u.uid?'background:var(--sun)':''}"><b>${esc(x.name)}</b><br>${esc(x.text)}</div>`).join('')||'<p class="b mu">Say hello and agree on the first steps.</p>';b.scrollTop=b.scrollHeight});
+const send=async()=>{const t=$('#tx').value.trim();if(!t)return;$('#tx').value='';await ref.collection('messages').add({from:u.uid,name:me.name,text:t,created:Date.now()})};$('#sd').onclick=send;$('#tx').onkeydown=e=>{if(e.key=='Enter')send()};
+if(cl&&p.status=='in-progress'){$('#dn').hidden=false;$('#dn').onclick=async()=>{if(confirm('Mark this project as completed?')){await ref.update({status:'completed'});location.reload()}}}
+if(p.status=='completed'){const r=await col('reviews').doc(id).get();
+if(r.exists)$('#rv').innerHTML=`<p class="tag">${'★'.repeat(r.data().rating)} Review submitted</p><p>${esc(r.data().text||'')}</p>`;
+else if(cl){$('#rv').innerHTML=`<label for="ra">Rate the freelancer</label><select id="ra"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select><label for="rt">Your review</label><textarea id="rt" rows="3"></textarea><button class="btn" id="rs">Submit review</button>`;
+$('#rs').onclick=async()=>{await col('reviews').doc(id).set({freelancer:p.hired,client:u.uid,clientName:me.name,projectTitle:p.title,rating:+$('#ra').value,text:$('#rt').value.trim(),created:Date.now()});location.reload()}}
+else $('#rv').innerHTML='<p class="mu">The client can now leave a review.</p>'}})</script></body></html>

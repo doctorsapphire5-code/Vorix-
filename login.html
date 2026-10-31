@@ -1,0 +1,20 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Log in | Vorix Work</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Instrument+Sans:wght@400;600&display=swap"><link rel="stylesheet" href="assets/style.css">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="assets/app.js"></script></head><body><header id="h"></header>
+<main class="wrap"><div class="card b" style="max-width:440px;margin:56px auto;padding:30px"><h2 id="t">Welcome back</h2><p class="mu" style="margin-bottom:18px">Log in to post projects or send proposals.</p><div id="err" class="err" role="alert"></div>
+<label for="rl">Account type (for new accounts)</label><select id="rl"><option value="client">Business, I want to hire</option><option value="freelancer">Freelancer, I want to work</option></select>
+<div id="nm" hidden><label for="name">Full name or business name</label><input id="name"></div>
+<label for="email">Email</label><input id="email" type="email" autocomplete="email"><label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password">
+<button class="btn" style="width:100%" id="go">Log in</button><button class="btn o" style="width:100%;margin-top:10px" id="g">Continue with Google</button>
+<p style="margin-top:16px"><a href="#" id="sw">Create an account</a> &nbsp; <a href="#" id="rs" class="mu">Forgot password?</a></p></div></main><footer id="f"></footer>
+<script>
+let reg=false,busy=false;const next=new URLSearchParams(location.search).get('next'),e=m=>$('#err').textContent=m,home=r=>next||(r=='freelancer'?'studio.html':r=='client'?'client.html':'projects.html');
+async function mk(u,name,r){await col('users').doc(u.uid).set({name,email:u.email,role:r,created:Date.now()});await col(r=='client'?'businesses':'freelancers').doc(u.uid).set({name,verified:false,created:Date.now()})}
+V.init({},(u,me)=>{if(u&&!busy)location.href=home(me.role)});
+$('#sw').onclick=x=>{x.preventDefault();reg=!reg;$('#nm').hidden=!reg;$('#t').textContent=reg?'Create your account':'Welcome back';$('#go').textContent=reg?'Sign up':'Log in';$('#sw').textContent=reg?'I already have an account':'Create an account'};
+$('#go').onclick=async()=>{e('');busy=true;try{const em=$('#email').value.trim(),pw=$('#pw').value;
+if(reg){const n=$('#name').value.trim(),r=$('#rl').value;if(!n)throw new Error('Enter your name.');const c=await auth.createUserWithEmailAndPassword(em,pw);await c.user.updateProfile({displayName:n});await mk(c.user,n,r);location.href=home(r);return}
+const c=await auth.signInWithEmailAndPassword(em,pw),d=await col('users').doc(c.user.uid).get();location.href=home(d.data()?.role)}catch(x){busy=false;e(x.message)}};
+$('#g').onclick=async()=>{busy=true;try{const c=await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()),d=await col('users').doc(c.user.uid).get();let r=d.data()?.role;if(!d.exists){r=$('#rl').value;await mk(c.user,c.user.displayName,r)}location.href=home(r)}catch(x){busy=false;e(x.message)}};
+$('#rs').onclick=async x=>{x.preventDefault();try{await auth.sendPasswordResetEmail($('#email').value.trim());e('Reset link sent. Check your email.')}catch(y){e(y.message)}};
+</script></body></html>

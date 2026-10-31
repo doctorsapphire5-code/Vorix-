@@ -1,0 +1,11 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin | Vorix Work</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Instrument+Sans:wght@400;600&display=swap"><link rel="stylesheet" href="assets/style.css">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="assets/app.js"></script></head><body><header id="h"></header>
+<main class="wrap sec"><h1 style="font-size:40px;margin-bottom:20px">Moderation</h1><div class="two" style="grid-template-columns:1fr 1fr 1fr"><div><h3 style="margin-bottom:8px">Freelancers</h3><div class="card" id="a"></div></div><div><h3 style="margin-bottom:8px">Businesses</h3><div class="card" id="b"></div></div><div><h3 style="margin-bottom:8px">Latest projects</h3><div class="card" id="c"></div></div></div></main><footer id="f"></footer>
+<script>V.init({roles:['admin']},()=>load());
+const vb=(c,x)=>`<div class="row"><span>${esc(x.name)}</span><button class="btn o" data-c="${c}" data-id="${x.id}" data-val="${x.verified?0:1}">${x.verified?'Unverify':'Verify'}</button></div>`;
+async function load(){const[a,b,c]=await Promise.all([V.all('freelancers'),V.all('businesses'),V.all('projects',50)]);
+$('#a').innerHTML=a.map(x=>vb('freelancers',x)).join('')||'<p class="b mu">None yet.</p>';$('#b').innerHTML=b.map(x=>vb('businesses',x)).join('')||'<p class="b mu">None yet.</p>';
+$('#c').innerHTML=c.map(x=>`<div class="row"><span>${esc(x.title)}</span><button class="btn o" data-c="projects" data-id="${x.id}">Delete</button></div>`).join('')||'<p class="b mu">None yet.</p>'}
+document.onclick=async e=>{const b=e.target.closest('button[data-c]');if(!b)return;const r=col(b.dataset.c).doc(b.dataset.id);
+if(b.dataset.c=='projects'){if(confirm('Delete this project permanently?'))await r.delete()}else await r.update({verified:b.dataset.val=='1'});load()}</script></body></html>
